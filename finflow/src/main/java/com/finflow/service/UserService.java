@@ -8,6 +8,11 @@ import com.finflow.entity.UserStatus;
 import com.finflow.exception.DuplicateEmailException;
 import com.finflow.exception.UserNotFoundException;
 import com.finflow.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +22,11 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -33,7 +40,9 @@ public class UserService {
 
         user.setName(request.getName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
+        user.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
 
         user.setRole(UserRole.CUSTOMER);
         user.setStatus(UserStatus.ACTIVE);
@@ -63,6 +72,37 @@ public class UserService {
                 user.getRole(),
                 user.getStatus(),
                 user.getCreatedAt()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getUsers(
+            int page,
+            int size,
+            String sortBy,
+            String direction
+    ) {
+
+        Sort.Direction sortDirection =
+                Sort.Direction.fromString(direction);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, sortBy)
+        );
+
+        Page<User> users = userRepository.findAll(pageable);
+
+        return users.map(user ->
+                new UserResponse(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.getStatus(),
+                        user.getCreatedAt()
+                )
         );
     }
 }
