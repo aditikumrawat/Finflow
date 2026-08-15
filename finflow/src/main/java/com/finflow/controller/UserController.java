@@ -4,6 +4,7 @@ import com.finflow.dto.request.CreateUserRequest;
 import com.finflow.dto.response.UserResponse;
 import com.finflow.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,16 +21,17 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping
-    public ResponseEntity<UserResponse> createUser(
-            @Valid @RequestBody CreateUserRequest request
-    ) {
-        UserResponse response = userService.createUser(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
-    }
+//    As We move forward not required these was just for initial method for user module.
+//    @PostMapping
+//    public ResponseEntity<UserResponse> createUser(
+//            @Valid @RequestBody CreateUserRequest request
+//    ) {
+//        UserResponse response = userService.createUser(request);
+//
+//        return ResponseEntity
+//                .status(HttpStatus.CREATED)
+//                .body(response);
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(
@@ -38,5 +40,23 @@ public class UserController {
         UserResponse response = userService.getUserById(id);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<UserResponse>> getUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction
+    ) {
+
+        return ResponseEntity.ok(
+                userService.getUsers(
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                )
+        );
     }
 }
