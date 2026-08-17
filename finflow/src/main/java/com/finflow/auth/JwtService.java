@@ -50,6 +50,7 @@ public class JwtService {
 
         String extractedUsername =
                 extractUsername(token);
+        System.out.println("JWT username: " + username);
 
         return extractedUsername.equals(username)
                 && !isTokenExpired(token);

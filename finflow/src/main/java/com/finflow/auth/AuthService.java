@@ -9,11 +9,15 @@ import com.finflow.exception.DuplicateEmailException;
 import com.finflow.entity.User;
 import com.finflow.repository.UserRepository;
 import com.finflow.dto.response.UserResponse;
+import com.finflow.wallet.Wallet;
+import com.finflow.wallet.WalletRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 
 @Service
@@ -23,15 +27,17 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final WalletRepository walletRepository;
 
     public AuthService(
             AuthenticationManager authenticationManager, JwtService jwtService, UserRepository userRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder, WalletRepository walletRepository
     ) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.walletRepository = walletRepository;
     }
 
     @Transactional
@@ -54,6 +60,14 @@ public class AuthService {
         user.setStatus(UserStatus.ACTIVE);
 
         User savedUser = userRepository.save(user);
+
+        Wallet wallet = new Wallet();
+        wallet.setUser(savedUser);
+        wallet.setBalance(BigDecimal.ZERO);
+        wallet.setCurrency("INR");
+        wallet.setStatus("ACTIVE");
+
+        walletRepository.save(wallet);
 
         return new UserResponse(
                 savedUser.getId(),
