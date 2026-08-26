@@ -34,8 +34,9 @@ public class Wallet {
     @Column(nullable = false, length = 3)
     private String currency;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status;
+    private WalletStatus status;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -53,11 +54,9 @@ public class Wallet {
         }
 
         if (status == null) {
-            status = "ACTIVE";
+            status = WalletStatus.ACTIVE;
         }
     }
-
-    // getters and setters
 
     public void setBalance(BigDecimal zero) {
         this.balance = zero;
@@ -71,7 +70,7 @@ public class Wallet {
         this.currency = inr;
     }
 
-    public void setStatus(String active) {
+    public void setStatus(WalletStatus active) {
         this.status = active;
     }
 
@@ -87,7 +86,7 @@ public class Wallet {
         return this.currency;
     }
 
-    public String getStatus() {
+    public WalletStatus getStatus() {
         return this.status;
     }
 }

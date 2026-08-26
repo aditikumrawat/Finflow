@@ -52,6 +52,66 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ApiErrorResponse> handleInsufficientBalance(
+            InsufficientBalanceException exception,
+            HttpServletRequest request
+    ) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "INSUFFICIENT_BALANCE",
+                exception.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    @ExceptionHandler(WalletNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleWalletNotFound(
+            WalletNotFoundException exception,
+            HttpServletRequest request
+    ) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                "WALLET_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+    @ExceptionHandler(InvalidTransferException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidTransfer(
+            InvalidTransferException exception,
+            HttpServletRequest request
+    ) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_TRANSFER",
+                exception.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(
             MethodArgumentNotValidException exception,
@@ -80,6 +140,26 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .badRequest()
+                .body(response);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleGenericException(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "INTERNAL_SERVER_ERROR",
+                "An unexpected error occurred",
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(response);
     }
 }
