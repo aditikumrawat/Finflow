@@ -11,6 +11,7 @@ import com.finflow.repository.UserRepository;
 import com.finflow.dto.response.UserResponse;
 import com.finflow.wallet.Wallet;
 import com.finflow.wallet.WalletRepository;
+import com.finflow.wallet.WalletStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -65,7 +66,7 @@ public class AuthService {
         wallet.setUser(savedUser);
         wallet.setBalance(BigDecimal.ZERO);
         wallet.setCurrency("INR");
-        wallet.setStatus("ACTIVE");
+        wallet.setStatus(WalletStatus.ACTIVE);
 
         walletRepository.save(wallet);
 
