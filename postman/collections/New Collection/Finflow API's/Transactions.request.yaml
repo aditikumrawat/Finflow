@@ -1,0 +1,11 @@
+$kind: http-request
+name: Transactions
+url: http://localhost:8080/api/v1/transactions?page=2&size=10
+method: GET
+headers:
+  Authorization: "{{bearer_token_004y}}"
+  Content-Type: application/json
+queryParams:
+  page: "2"
+  size: "10"
+order: 2355237756104834

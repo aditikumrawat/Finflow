@@ -1,0 +1,11 @@
+$kind: http-request
+name: Transactions with sorting
+url: http://localhost:8080/api/v1/transactions?page=0&size=10&sort=createdAt,desc
+method: GET
+headers:
+  Authorization: "{{bearer_token_004y}}"
+queryParams:
+  page: "0"
+  size: "10"
+  sort: createdAt,desc
+order: 4361269975301947

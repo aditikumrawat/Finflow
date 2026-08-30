@@ -112,6 +112,26 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(IdempotencyKeyReuseException.class)
+    public ResponseEntity<ApiErrorResponse> handleIdempotencyKeyReuse(
+            IdempotencyKeyReuseException exception,
+            HttpServletRequest request
+    ) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "IDEMPOTENCY_KEY_REUSED",
+                exception.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(
             MethodArgumentNotValidException exception,

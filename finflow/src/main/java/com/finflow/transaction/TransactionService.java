@@ -1,15 +1,21 @@
 package com.finflow.transaction;
 
+import com.finflow.exception.IdempotencyKeyReuseException;
 import com.finflow.exception.InsufficientBalanceException;
 import com.finflow.exception.InvalidTransferException;
 import com.finflow.exception.WalletNotFoundException;
 import com.finflow.transaction.dto.TransactionResponse;
 import com.finflow.transaction.dto.TransferRequest;
+import com.finflow.transaction.util.RequestFingerprint;
 import com.finflow.wallet.Wallet;
 import com.finflow.wallet.WalletRepository;
 import com.finflow.wallet.WalletStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 public class TransactionService {
@@ -31,7 +37,11 @@ public class TransactionService {
             TransferRequest request
     ) {
 
-        // Implementation goes here
+        Optional<Transaction> existingTransaction =
+                transactionRepository.findByReferenceId(
+                        request.referenceId()
+                );
+
         Wallet senderWallet = walletRepository
                 .findByUserEmail(senderEmail)
                 .orElseThrow(() ->
@@ -39,6 +49,28 @@ public class TransactionService {
                                 "Sender wallet not found"
                         )
                 );
+
+        String fingerprint =
+                RequestFingerprint.generate(
+                        senderWallet.getId().toString(),
+                        request.receiverWalletId().toString(),
+                        request.amount().toPlainString(),
+                        "INR",
+                        request.referenceId()
+                );
+
+        if (existingTransaction.isPresent()) {
+
+            Transaction existing = existingTransaction.get();
+
+            if (!fingerprint.equals(existing.getRequestFingerprint())) {
+                throw new IdempotencyKeyReuseException(
+                        "Reference ID has already been used for a different transaction"
+                );
+            }
+
+            return toResponse(existing);
+        }
 
         Wallet receiverWallet = walletRepository
                 .findById(request.receiverWalletId())
@@ -90,6 +122,7 @@ public class TransactionService {
         transaction.setCurrency(senderWallet.getCurrency());
         transaction.setReferenceId(request.referenceId());
         transaction.setDescription(request.description());
+        transaction.setRequestFingerprint(fingerprint);
         transaction.setStatus(TransactionStatus.PENDING);
 
         transaction = transactionRepository.save(transaction);
@@ -109,10 +142,40 @@ public class TransactionService {
                 java.time.LocalDateTime.now()
         );
 
+        return toResponse(transaction);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TransactionResponse> getMyTransactions(
+            String email,
+            Pageable pageable
+    ) {
+
+        Wallet wallet = walletRepository
+                .findByUserEmail(email)
+                .orElseThrow(() ->
+                        new WalletNotFoundException(
+                                "Wallet not found"
+                        )
+                );
+
+        return transactionRepository
+                .findBySenderWalletIdOrReceiverWalletId(
+                        wallet.getId(),
+                        wallet.getId(),
+                        pageable
+                )
+                .map(this::toResponse);
+    }
+
+        private TransactionResponse toResponse(
+            Transaction transaction
+    ) {
+
         return new TransactionResponse(
                 transaction.getId(),
-                senderWallet.getId(),
-                receiverWallet.getId(),
+                transaction.getSenderWallet().getId(),
+                transaction.getReceiverWallet().getId(),
                 transaction.getAmount(),
                 transaction.getCurrency(),
                 transaction.getStatus(),

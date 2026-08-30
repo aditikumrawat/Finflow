@@ -58,6 +58,11 @@ public class Transaction {
     @Column(length = 255)
     private String description;
 
+    @Column(
+            name = "request_fingerprint"
+    )
+    private String requestFingerprint;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -108,6 +113,10 @@ public class Transaction {
         this.completedAt = now;
     }
 
+    public void setRequestFingerprint(String fingerprint) {
+        this.requestFingerprint = fingerprint;
+    }
+
     public UUID getId() {
         return this.id;
     }
@@ -139,4 +148,18 @@ public class Transaction {
     public LocalDateTime getCompletedAt() {
         return this.completedAt;
     }
+
+    public Wallet getSenderWallet() {
+        return this.senderWallet;
+    }
+
+    public Wallet getReceiverWallet() {
+        return this.receiverWallet;
+    }
+
+    public String getRequestFingerprint() {
+        return this.requestFingerprint;
+    }
+
+
 }

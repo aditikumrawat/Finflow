@@ -1,0 +1,10 @@
+$kind: http-request
+name: Transactions
+url: http://localhost:8080/api/v1/transactions?page=0&size=10
+method: GET
+headers:
+  Authorization: Bearer {{supabase_service_role_api_key_08pj}}
+queryParams:
+  page: "0"
+  size: "10"
+order: 3624076035749005
