@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  Generated from cURL: curl -i -X POST \
+  http://localhost:8080/api/v1/transactions/transfer \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+      "receiverWalletId": "00000000-0000-0000-0000-000000000000",
+      "amount": 100.00,
+      "referenceId": "TXN-INVALID-001",
+      "description": "Test"
+  }'
+url: http://localhost:8080/api/v1/transactions/transfer
+method: POST
+headers:
+  Authorization: Bearer $TOKEN
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "receiverWalletId": "00000000-0000-0000-0000-000000000000",
+        "amount": 100.00,
+        "referenceId": "TXN-INVALID-001",
+        "description": "Test"
+    }
+order: 3867030592478627
