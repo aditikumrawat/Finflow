@@ -28,15 +28,19 @@ public class TransactionController {
             Authentication authentication
     ) {
 
-        TransactionResponse response =
+        TransactionService.TransferResult result =
                 transactionService.transfer(
                         authentication.getName(),
                         request
                 );
 
+        if (result.alreadyProcessed()) {
+            return ResponseEntity.ok(result.response());
+        }
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(response);
+                .body(result.response());
     }
 
     @GetMapping

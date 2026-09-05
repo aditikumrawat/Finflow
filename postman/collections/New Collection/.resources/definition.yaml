@@ -7,3 +7,33 @@ variables:
   - key: bearer_token_004y
     secret: true
     disabled: false
+  - key: json_web_token_12ao
+    secret: true
+    disabled: false
+  - key: bearer_token_12k0
+    secret: true
+    disabled: false
+  - key: supabase_service_role_api_key_12ao
+    secret: true
+    disabled: false
+  - key: json_web_token_0d7y
+    secret: true
+    disabled: false
+  - key: bearer_token_0pge
+    secret: true
+    disabled: false
+  - key: supabase_service_role_api_key_0d7y
+    secret: true
+    disabled: false
+  - key: bearer_token_0jt2
+    secret: true
+    disabled: false
+  - key: supabase_service_role_api_key_0faw
+    secret: true
+    disabled: false
+  - key: supabase_service_role_api_key_00ma
+    secret: true
+    disabled: false
+  - key: bearer_token_0zez
+    secret: true
+    disabled: false

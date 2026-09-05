@@ -1,0 +1,28 @@
+$kind: http-request
+name: http://localhost:8080/api/v1/transactions/transfer
+description: |-
+  Generated from cURL: curl -s -X POST \
+  http://localhost:8080/api/v1/transactions/transfer \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+      "receiverWalletId": "RECEIVER_WALLET_ID",
+      "amount": 500.00,
+      "referenceId": "TXN-RACE-001",
+      "description": "Race test"
+  }'
+url: http://localhost:8080/api/v1/transactions/transfer
+method: POST
+headers:
+  Authorization: Bearer {{supabase_service_role_api_key_00ma}}
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "receiverWalletId": "bc7c0a1f-4a8f-4012-9dcd-2ef37825964c",
+        "amount": 2.00,
+        "referenceId": "TXN-017",
+        "description": "testing"
+    }
+order: 4046022673212271
