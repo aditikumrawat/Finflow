@@ -1,0 +1,21 @@
+$kind: http-request
+name: http://localhost:8080/api/v1/auth/login
+description: |-
+  Generated from cURL: curl -X POST http://localhost:8080/api/v1/auth/login \                                                                                   
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "wallet@example.com",
+    "password": "testpassword123"
+  }'
+url: http://localhost:8080/api/v1/auth/login
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "aditi@example.com",
+      "password": "testpassword123"
+    }
+order: 404162467489418

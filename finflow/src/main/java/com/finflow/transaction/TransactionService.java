@@ -41,7 +41,7 @@ public class TransactionService {
     ) {
 
         Wallet senderLookup = walletRepository
-                .findByUserEmail(senderEmail)
+                .findByUserEmailForUpdate(senderEmail)
                 .orElseThrow(() ->
                         new WalletNotFoundException(
                                 "Sender wallet not found"
