@@ -37,3 +37,9 @@ variables:
   - key: bearer_token_0zez
     secret: true
     disabled: false
+  - key: bearer_token_11xw
+    secret: true
+    disabled: false
+  - key: json_web_token_0s2q
+    secret: true
+    disabled: false

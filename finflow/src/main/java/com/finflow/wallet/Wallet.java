@@ -34,6 +34,10 @@ public class Wallet {
     @Column(nullable = false, length = 3)
     private String currency;
 
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long version;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private WalletStatus status;
@@ -84,6 +88,10 @@ public class Wallet {
 
     public String getCurrency() {
         return this.currency;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 
     public WalletStatus getStatus() {

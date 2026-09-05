@@ -1,5 +1,5 @@
 $kind: http-request
-name: http://localhost:8080/api/v1/transactions/transfer
+name: B
 description: |-
   Generated from cURL: curl -s -X POST \
   http://localhost:8080/api/v1/transactions/transfer \
@@ -14,15 +14,15 @@ description: |-
 url: http://localhost:8080/api/v1/transactions/transfer
 method: POST
 headers:
-  Authorization: Bearer {{supabase_service_role_api_key_00ma}}
   Content-Type: application/json
+  Authorization: "{{bearer_token_11xw}}"
 body:
   type: json
   content: |-
     {
-        "receiverWalletId": "bc7c0a1f-4a8f-4012-9dcd-2ef37825964c",
+        "receiverWalletId": "206b9408-836b-4ede-adc4-31326b1ec229",
         "amount": 1.00,
-        "referenceId": "TXN-016",
+        "referenceId": "TXN-022",
         "description": "testing"
     }
-order: 2235900575157130
+order: 4046022673212271
