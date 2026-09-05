@@ -16,33 +16,31 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final WalletRepository walletRepository;
+    private final IdempotencyService idempotencyService;
 
     public TransactionService(
             TransactionRepository transactionRepository,
-            WalletRepository walletRepository
+            WalletRepository walletRepository, IdempotencyService idempotencyService
     ) {
         this.transactionRepository = transactionRepository;
         this.walletRepository = walletRepository;
+        this.idempotencyService = idempotencyService;
     }
 
     @Transactional
-    public TransactionResponse transfer(
+    public TransferResult transfer(
             String senderEmail,
             TransferRequest request
     ) {
 
-        Optional<Transaction> existingTransaction =
-                transactionRepository.findByReferenceId(
-                        request.referenceId()
-                );
-
-        Wallet senderWallet = walletRepository
+        Wallet senderLookup = walletRepository
                 .findByUserEmail(senderEmail)
                 .orElseThrow(() ->
                         new WalletNotFoundException(
@@ -50,12 +48,26 @@ public class TransactionService {
                         )
                 );
 
+        UUID senderWalletId = senderLookup.getId();
+        UUID receiverWalletId = request.receiverWalletId();
+
+        if (senderWalletId.equals(receiverWalletId)) {
+            throw new InvalidTransferException(
+                    "Sender and receiver wallets must be different"
+            );
+        }
+
         String fingerprint =
                 RequestFingerprint.generate(
-                        senderWallet.getId().toString(),
-                        request.receiverWalletId().toString(),
+                        senderWalletId.toString(),
+                        receiverWalletId.toString(),
                         request.amount().toPlainString(),
                         "INR",
+                        request.referenceId()
+                );
+
+        Optional<Transaction> existingTransaction =
+                transactionRepository.findByReferenceId(
                         request.referenceId()
                 );
 
@@ -69,80 +81,121 @@ public class TransactionService {
                 );
             }
 
-            return toResponse(existing);
-        }
-
-        Wallet receiverWallet = walletRepository
-                .findById(request.receiverWalletId())
-                .orElseThrow(() ->
-                        new WalletNotFoundException(
-                                "Receiver wallet not found"
-                        )
-                );
-
-        if (senderWallet.getId()
-                .equals(receiverWallet.getId())) {
-
-            throw new InvalidTransferException(
-                    "Sender and receiver wallets must be different"
+            return new TransferResult(
+                    toResponse(existing),
+                    true
             );
         }
 
-        if (!WalletStatus.ACTIVE.equals(senderWallet.getStatus())) {
+        UUID firstWalletId;
+        UUID secondWalletId;
+
+        if (senderWalletId.compareTo(receiverWalletId) < 0) {
+            firstWalletId = senderWalletId;
+            secondWalletId = receiverWalletId;
+        } else {
+            firstWalletId = receiverWalletId;
+            secondWalletId = senderWalletId;
+        }
+
+        Wallet firstLockedWallet =
+                walletRepository
+                        .findByIdForUpdate(firstWalletId)
+                        .orElseThrow(() ->
+                                new WalletNotFoundException(
+                                        "Wallet not found"
+                                )
+                        );
+
+        Wallet secondLockedWallet =
+                walletRepository
+                        .findByIdForUpdate(secondWalletId)
+                        .orElseThrow(() ->
+                                new WalletNotFoundException(
+                                        "Wallet not found"
+                                )
+                        );
+
+        Wallet lockedSenderWallet;
+        Wallet lockedReceiverWallet;
+
+        if (firstLockedWallet.getId().equals(senderWalletId)) {
+            lockedSenderWallet = firstLockedWallet;
+            lockedReceiverWallet = secondLockedWallet;
+        } else {
+            lockedSenderWallet = secondLockedWallet;
+            lockedReceiverWallet = firstLockedWallet;
+        }
+
+        if (!WalletStatus.ACTIVE.equals(lockedSenderWallet.getStatus())) {
             throw new InvalidTransferException(
                     "Sender wallet is not active"
             );
         }
 
-        if (!WalletStatus.ACTIVE.equals(receiverWallet.getStatus())) {
+        if (!WalletStatus.ACTIVE.equals(lockedReceiverWallet.getStatus())) {
             throw new InvalidTransferException(
                     "Receiver wallet is not active"
             );
         }
 
-        if (!senderWallet.getCurrency()
-                .equals(receiverWallet.getCurrency())) {
-
+        if (!lockedSenderWallet.getCurrency().equals(lockedReceiverWallet.getCurrency())) {
             throw new InvalidTransferException(
                     "Wallet currencies do not match"
             );
         }
 
-        if (senderWallet.getBalance()
-                .compareTo(request.amount()) < 0) {
-
+        if (lockedSenderWallet.getBalance().compareTo(request.amount()) < 0) {
             throw new InsufficientBalanceException();
         }
 
         Transaction transaction = new Transaction();
-
-        transaction.setSenderWallet(senderWallet);
-        transaction.setReceiverWallet(receiverWallet);
+        transaction.setSenderWallet(lockedSenderWallet);
+        transaction.setReceiverWallet(lockedReceiverWallet);
         transaction.setAmount(request.amount());
-        transaction.setCurrency(senderWallet.getCurrency());
+        transaction.setCurrency(lockedSenderWallet.getCurrency());
         transaction.setReferenceId(request.referenceId());
         transaction.setDescription(request.description());
         transaction.setRequestFingerprint(fingerprint);
         transaction.setStatus(TransactionStatus.PENDING);
 
-        transaction = transactionRepository.save(transaction);
+        try {
+            transactionRepository.saveAndFlush(transaction);
+        } catch (org.springframework.dao.DataIntegrityViolationException exception) {
 
-        senderWallet.setBalance(
-                senderWallet.getBalance()
+            Transaction existing =
+                    idempotencyService.getExistingTransaction(
+                            request.referenceId()
+                    );
+
+            if (!fingerprint.equals(existing.getRequestFingerprint())) {
+                throw new IdempotencyKeyReuseException(
+                        "Reference ID has already been used for a different transaction"
+                );
+            }
+            return new TransferResult(
+                    toResponse(existing),
+                    true
+            );
+        }
+
+        lockedSenderWallet.setBalance(
+                lockedSenderWallet.getBalance()
                         .subtract(request.amount())
         );
 
-        receiverWallet.setBalance(
-                receiverWallet.getBalance()
+        lockedReceiverWallet.setBalance(
+                lockedReceiverWallet.getBalance()
                         .add(request.amount())
         );
 
         transaction.setStatus(TransactionStatus.SUCCESS);
-        transaction.setCompletedAt(
-                java.time.LocalDateTime.now()
-        );
+        transaction.setCompletedAt(java.time.LocalDateTime.now());
 
-        return toResponse(transaction);
+        return new TransferResult(
+                toResponse(transaction),
+                false
+        );
     }
 
     @Transactional(readOnly = true)
@@ -168,7 +221,7 @@ public class TransactionService {
                 .map(this::toResponse);
     }
 
-        private TransactionResponse toResponse(
+    private TransactionResponse toResponse(
             Transaction transaction
     ) {
 
@@ -186,4 +239,9 @@ public class TransactionService {
         );
     }
 
+    public record TransferResult(
+            TransactionResponse response,
+            boolean alreadyProcessed
+    ) {
+    }
 }
