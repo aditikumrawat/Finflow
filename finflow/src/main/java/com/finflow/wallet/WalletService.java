@@ -1,6 +1,7 @@
 package com.finflow.wallet;
 
 import com.finflow.wallet.dto.WalletResponse;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,10 @@ public class WalletService {
         this.walletRepository = walletRepository;
     }
 
+    @Cacheable(
+            value = "wallets",
+            key = "#email"
+    )
     public WalletResponse getMyWallet(String email) {
 
         Wallet wallet = walletRepository
