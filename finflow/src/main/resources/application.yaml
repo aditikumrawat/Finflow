@@ -1,25 +1,35 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/finflow
-    username: finflow
-    password: finflow_password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/finflow}
+    username: ${SPRING_DATASOURCE_USERNAME:finflow}
+    password: ${SPRING_DATASOURCE_PASSWORD:finflow_password}
     driver-class-name: org.postgresql.Driver
-
-  data:
-    redis:
-      host: localhost
-      port: 6379
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
 
-server:
-  port: 8080
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+  server:
+    port: 8080
+
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health,info,metrics
+
+    endpoint:
+      health:
+        probes:
+          enabled: true
+        show-details: always
+
+      metrics:
+        tags:
+          application: finflow
